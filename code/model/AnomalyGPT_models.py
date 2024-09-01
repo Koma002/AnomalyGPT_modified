@@ -57,10 +57,14 @@ class PromptLearner(nn.Module):
             nn.Conv2d(dim_in * 64, dim_out, kernel_size=3, padding=1),
             # nn.BatchNorm2d(dim_in * 256),
             nn.ReLU(inplace=True),
+            #nn.AdaptiveAvgPool2d((3, 3))
             nn.MaxPool2d(kernel_size=3, stride=3),
             nn.Flatten(),
-            nn.Linear(dim_out * 3 * 3, dim_out * 9)
-            # nn.Conv2d(dim_in * 256, dim_in * 1024, kernel_size=3, padding=1),
+            nn.Linear(dim_out * 9, dim_out),
+            nn.ReLU(),
+            nn.Linear(dim_out, dim_out * 9)
+            #nn.Linear(dim_out * 3 * 3, dim_out * 9)
+            #nn.Conv2d(dim_in * 256, dim_in * 1024, kernel_size=3, padding=1),
             # # nn.BatchNorm2d(dim_in * 1024),
             # nn.ReLU(inplace=True),
             # nn.MaxPool2d(2), # 7 * 7

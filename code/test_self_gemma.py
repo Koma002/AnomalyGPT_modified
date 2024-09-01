@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser("AnomalyGPT", add_help=True)
 parser.add_argument("--few_shot", type=bool, default=False)
 parser.add_argument("--k_shot", type=int, default=1)
 parser.add_argument("--round", type=int, default=0)
+parser.add_argument('--if_train_data', action=argparse.BooleanOptionalAction)
 
 
 command_args = parser.parse_args()
@@ -28,7 +29,13 @@ describles['capsule'] = "This is a photo of a capsule for anomaly detection, whi
 describles['disc1'] = ""
 describles['disc2'] = ""
 describles['disc3'] = ""
-FEW_SHOT = command_args.few_shot 
+FEW_SHOT = command_args.few_shot
+train_data = command_args.if_train_data
+mode = 'test'
+if train_data:
+    mode = "train"
+else:
+    mode = "test"
 
 # init the model
 args = {
@@ -37,8 +44,8 @@ args = {
     'gemma_ckpt_path': '../pretrained_ckpt/gemma_it_ckpt/',
     'if_load_lora': True,
     'if_load_decoder':True,
-    'lora_ckpt_path': './ckpt/train_self_gemma_more_lora_more_linear/gemma_weight/',
-    'anomalygpt_ckpt_path': './ckpt/train_self_gemma_more_lora_more_linear/pytorch_model.pt',
+    'lora_ckpt_path': './ckpt/train_disc/gemma_weight/',
+    'anomalygpt_ckpt_path': './ckpt/train_disc/pytorch_model.pt',
     'decoder_ckpt_path': './ckpt/train_self_decoder_sup/pytorch_model.pt',
     'stage': 2,
     'max_tgt_len': 128,
@@ -163,8 +170,6 @@ for i, file in enumerate(disk_files, 1):
 precision = []
 p_auc_list = []
 i_auc_list = []
-
-mode = "test"
 
 for c_name in CLASS_NAMES:
     normal_img_paths = ["../data/self_data/"+c_name+"/train/good/"+str(command_args.round * 4+1).zfill(3)+".jpg", "../data/self_data/"+c_name+"/train/good/"+str(command_args.round * 4 + 2).zfill(3)+".jpg",
