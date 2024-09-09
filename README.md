@@ -1,19 +1,7 @@
 # AnomalyGPT_modified
 
 
-<span id='catelogue'/>
-
-## Catalogue:
-
-* <a href='#test_file'>Running test file</a>
-
-
-
-
-<span id='test_file'/>
-
 ### Running test file
-
 
 #### 1. Install Environment
 
@@ -59,15 +47,18 @@ You can download AnomalyGPT weights from the table below.
 
 | Setup and Datasets  | Weights Address |
 | :----------------: | :----------------: |
+|Unsupervised on MVTec|[train_mvtec_aug](https://drive.google.com/file/d/1Fgyij5UX5SWCfK76fKPpRRcismAhhGsb/view?usp=sharing)|
+||[train_mvtec_aug_llm](https://drive.google.com/file/d/1U2j95I8CwuFVES5Kz-qVyIP_8ZcKuTn_/view?usp=sharing)|
 | Supervised on cutting disc| [train_self_decoder_sup](https://drive.google.com/file/d/1V7H8phv-nr2d07qBbwror3G02roRVmeq/view?usp=sharing)|
-|    | [train_disc](https://drive.google.com/file/d/1aTEF0r8RIWMXoAcu_Z-IbMlsFt9Ei6Q-/view?usp=sharing)
+|    | [train_disc](https://drive.google.com/file/d/1aTEF0r8RIWMXoAcu_Z-IbMlsFt9Ei6Q-/view?usp=sharing)|
+
 
 After downloading, put both weights in the [code/ckpt/](./code/ckpt/) with correspondding folder name.
 
 > After this step, the path `code/ckpt` should look like:
 > 
     .
-    ├── train_disc
+    ├── train_mvtec_aug_llm (or train_disc)
     │   ├── gemma_weight
     │   │   ├── README.md
     │   │   ├── adapter_config.json
@@ -77,35 +68,35 @@ After downloading, put both weights in the [code/ckpt/](./code/ckpt/) with corre
     │   │   ├── tokenizer.model
     │   │   └── tokenizer_config.json
     │   └── pytorch_model.pt
-    └── train_self_decoder_sup
+    └── train_mvtec_aug (or train_self_decoder_sup)
         └── pytorch_model.pt
 
 #### 3. Prepare dataset:
-You can download disc dataset from [here](https://drive.google.com/file/d/1Zo0AGBfxn7P22H66GLk5iF9Hs6s-IWDJ/view?usp=sharing). After downloading, unzip the file and put the folder into [data/](./data/).
+You can download MVTec AD dataset from [here](https://www.mvtec.com/company/research/datasets/mvtec-ad/downloads). After downloading, unzip the file and put the folder into [data/](./data/).
+
+If you are interested in cutting disc dataset and would like to test with it, please use the link [here](https://drive.google.com/file/d/1Zo0AGBfxn7P22H66GLk5iF9Hs6s-IWDJ/view?usp=sharing) to apply. 
 > After this step, the path `data/` should look like:
 >    
     .
-    └── self_final_data_sup
-        ├── disc1
+    └── mvtec
+        ├── bottle
+        │   ├── ground_truth
         │   ├── test
         │   └── train
-        ├── disc2
-        │   ├── test
-        │   └── train
-        └── disc3
-            ├── test
-            └── train
+        ├── capsule
+        └── ...
+
 
 #### 4. Run test file
 
 Upon completion of previous steps, you can run the test file as:
 ```bash
 cd ./code/
-python test_self_gemma.py
+python test_mvtec.py
 ```
-And the result mask image will generate in `result/` path. Also, you can use `--if_train_data` or `--no-if_train_data` to switch between train data and test data used. For example:
+And the result mask image will generate in `result/` path and the metrics will show on screen. Also, you can use `--if_train_data` or `--no-if_train_data` to switch between train data and test data used. For example:
 ```bash
-python test_self_gemma.py --if_train_data
+python test_mvtec.py --if_train_data
 ```
 ****
 
