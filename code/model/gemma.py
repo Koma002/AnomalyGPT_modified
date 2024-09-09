@@ -20,6 +20,7 @@ DISC_NAMES = ['type 1 resin cutting disc', 'type 2 resin cutting disc', 'type 3 
 
 prompt_normal = ['{}', 'flawless {}', 'perfect {}', 'unblemished {}', '{} without flaw', '{} without defect', '{} without damage']
 prompt_abnormal = ['damaged {}', 'broken {}', '{} with flaw', '{} with defect', '{} with damage']
+#prompt_abnormal = ['damaged {}', '{} with proken parts', '{} with flaw', '{} with defect', '{} with damage', '{} with uncomplete label', '{} with multi-grid']
 
 prompt_state = [prompt_normal, prompt_abnormal]
 prompt_templates = ['a photo of a {}.', 'a photo of the {}.']
@@ -180,9 +181,9 @@ class OpenGEMMAPEFTModel(nn.Module):
 
         self.prompt_learner = PromptLearner(8, 2048)
 
-        self.loss_focal = FocalLoss()
+        self.loss_focal = FocalLoss()#alpha = [0.05,0.95])
         self.loss_dice = BinaryDiceLoss()
-        self.loss_bce = BCEWithLogitsLoss(pos_weight=torch.tensor([100]))
+        #self.loss_bce = BCEWithLogitsLoss(pos_weight=torch.tensor([100]))
 
 
         # free vision encoder
@@ -499,7 +500,7 @@ class OpenGEMMAPEFTModel(nn.Module):
                 anomaly_maps[num] = torch.softmax(anomaly_maps[num], dim=1)
                 # f_loss = self.loss_focal(anomaly_maps[num], gt)
                 # d_loss = self.loss_dice(anomaly_maps[num][:, 1, :, :], gt)
-                # loss_pixel = loss_pixel + d_loss + f_loss + b_loss
+                # loss_pixel = loss_pixel + d_loss + f_loss #+ b_loss
             # print(torch.max(anomaly_maps[num][0, 1, :, :]))
             # print(torch.max(anomaly_maps[num][1, 1, :, :]))
             for num in range(len(anomaly_maps)):
@@ -507,36 +508,36 @@ class OpenGEMMAPEFTModel(nn.Module):
             anomaly_map_all = torch.mean(torch.stack(anomaly_maps, dim=0), dim=0).unsqueeze(1)
         
             if random.randint(0,1) == 3 and len(inputs['img_paths']) == len(image_paths):
-
+            
                 normal_paths = []
                 for path in inputs['img_paths']:
                     normal_path = path.replace('test', 'train')
                     normal_path = find_first_file_in_directory("/".join(normal_path.split('/')[:-2])+'/good')
                     normal_paths.append(normal_path)
-
+            
                 print(normal_paths)
                 query_patch_tokens = self.encode_image_for_one_shot_from_tensor(image_paths)
                 normal_patch_tokens = self.encode_image_for_one_shot_with_aug(normal_paths)
                 sims = []
                 B = len(image_paths)
-
+            
                 for i in range(len(query_patch_tokens)):
                     query_patch_tokens_reshaped = query_patch_tokens[i].view(B,256,1,1280)
                     normal_tokens_reshaped = normal_patch_tokens[i].reshape(B,1,-1,1280)
                     cosine_similarity_matrix = F.cosine_similarity(query_patch_tokens_reshaped, normal_tokens_reshaped, dim=-1)
                     sim_max, _ = torch.max(cosine_similarity_matrix, dim=-1)
                     sims.append(sim_max)
-
+            
                 sim = torch.mean(torch.stack(sims,dim=0), dim=0).reshape(B,1,16,16)
                 sim = F.interpolate(sim,size=512, mode='bilinear', align_corners=True)
                 anomaly_map_all = 1 - sim # (anomaly_map_all + 1 - sim) / 2
             anomaly_map_prompts = self.prompt_learner(original_anomaly_map)
-
+            
             # img_embeds = img_embeds + anomaly_map_prompts
             output_texts = inputs['texts']
             input_ids, target_ids, attention_mask = process_batch_instance(self.tokenizer, output_texts, self.max_tgt_len)
             inputs_embeds, targets, attention_mask = self.prompt_wrap(img_embeds, input_ids, target_ids, attention_mask, anomaly_map_prompts)
-
+            
             outputs = self.gemma_model(
                 inputs_embeds=inputs_embeds,
                 attention_mask=attention_mask,
@@ -544,7 +545,7 @@ class OpenGEMMAPEFTModel(nn.Module):
                 labels=targets,
             )
             loss = outputs.loss
-
+            
             # loss_l2 = torch.norm(anomaly_map_prompts / 2 , p=2)
             # loss_l2 = nn.MSELoss()(img_embeds_origin, img_embeds)
             # calculate the token accuarcy
@@ -715,7 +716,7 @@ class OpenGEMMAPEFTModel(nn.Module):
 
         # self.prompt_learner.eval()
         anomaly_map_prompts = self.prompt_learner(original_anomaly_map)
-        print(prompt)
+        #print(prompt)
         text = prompt + '<end_of_turn>\n<start_of_turn>model\n'
         p_after_tokens = self.tokenizer(text, add_special_tokens=False, return_tensors='pt').to(self.device)
         p_after_embeds = self.gemma_model.model.model.embed_tokens(p_after_tokens.input_ids).expand(batch_size, -1, -1) # bsz x s2 x embed_dim

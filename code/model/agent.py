@@ -16,7 +16,7 @@ class DeepSpeedAgent:
             param.requires_grad = False
 
         for name, param in self.model.image_decoder.named_parameters():
-            param.requires_grad = True
+            param.requires_grad = False
         #
         for name, param in self.model.prompt_learner.named_parameters():
             param.requires_grad = True
